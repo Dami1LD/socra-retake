@@ -94,11 +94,10 @@ public class PacketParserTest {
     @NullAndEmptySource
     @ValueSource(strings = {"   ", "\t"})
     void rejectsMissingContent(String line) {
-      // Arrange: the blank line comes from the parameter source
 
       InvalidPacketException exception = parseExpectingFailure(line);
 
-      assertEquals("A packet cannot be empty", exception.getMessage());
+      assertEquals("Packet line cannot be null or empty", exception.getMessage());
     }
 
     @ParameterizedTest(name = "\"{0}\" is rejected because: {1}")
@@ -117,8 +116,6 @@ public class PacketParserTest {
           "[99999999999]| Integer too large"
         })
     void rejectsMalformedPacketWithExplicitReason(String line, String expectedReason) {
-      // Arrange: the malformed line and its reason come from the CSV source
-
       InvalidPacketException exception = parseExpectingFailure(line);
 
       assertTrue(
