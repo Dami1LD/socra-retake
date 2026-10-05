@@ -1,4 +1,6 @@
 /home/damien/ing2/mti/socra/socra-retake/src/main/java/fr/epita/distresssignal/domain/IntegerPacket.java
-/home/damien/ing2/mti/socra/socra-retake/src/main/java/fr/epita/distresssignal/domain/PacketPair.java
-/home/damien/ing2/mti/socra/socra-retake/src/main/java/fr/epita/distresssignal/domain/Packet.java
 /home/damien/ing2/mti/socra/socra-retake/src/main/java/fr/epita/distresssignal/domain/ListPacket.java
+/home/damien/ing2/mti/socra/socra-retake/src/main/java/fr/epita/distresssignal/domain/Packet.java
+/home/damien/ing2/mti/socra/socra-retake/src/main/java/fr/epita/distresssignal/domain/PacketPair.java
+/home/damien/ing2/mti/socra/socra-retake/src/main/java/fr/epita/distresssignal/infrastructure/InvalidPacketException.java
+/home/damien/ing2/mti/socra/socra-retake/src/main/java/fr/epita/distresssignal/infrastructure/PacketParser.java
