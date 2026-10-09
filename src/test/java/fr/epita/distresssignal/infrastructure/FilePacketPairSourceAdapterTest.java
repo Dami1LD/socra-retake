@@ -11,17 +11,17 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class FilePacketPairSourceTest {
+class FilePacketPairSourceAdapterTest {
   @TempDir Path tempDir;
 
-  private FilePacketPairSource sourceOf(String content) throws IOException {
+  private FilePacketPairSourceAdapter sourceOf(String content) throws IOException {
     Path file = Files.writeString(tempDir.resolve("input.txt"), content);
-    return new FilePacketPairSource(file, new PacketParser());
+    return new FilePacketPairSourceAdapter(file, new PacketParser());
   }
 
   @Test
   void loadPairs_returnsOnePair_whenFileHasOneBlock() throws IOException {
-    FilePacketPairSource source = sourceOf("[1,2]\n[3]\n");
+    FilePacketPairSourceAdapter source = sourceOf("[1,2]\n[3]\n");
 
     List<PacketPair> pairs = source.loadPairs();
 
@@ -30,7 +30,7 @@ class FilePacketPairSourceTest {
 
   @Test
   void loadPairs_returnsPairsInFileOrder_whenBlocksAreSeparatedByBlankLine() throws IOException {
-    FilePacketPairSource source = sourceOf("[1]\n[2]\n\n[[3]]\n[4]\n");
+    FilePacketPairSourceAdapter source = sourceOf("[1]\n[2]\n\n[[3]]\n[4]\n");
 
     List<PacketPair> pairs = source.loadPairs();
 
@@ -43,7 +43,7 @@ class FilePacketPairSourceTest {
 
   @Test
   void loadPairs_ignoresExtraBlankLines_whenSeparatorsAreRepeatedOrTrailing() throws IOException {
-    FilePacketPairSource source = sourceOf("\n[1]\n[2]\n\n\n\n[3]\n[4]\n\n\n");
+    FilePacketPairSourceAdapter source = sourceOf("\n[1]\n[2]\n\n\n\n[3]\n[4]\n\n\n");
 
     List<PacketPair> pairs = source.loadPairs();
 
@@ -52,7 +52,7 @@ class FilePacketPairSourceTest {
 
   @Test
   void loadPairs_returnsEmptyList_whenFileIsEmpty() throws IOException {
-    FilePacketPairSource source = sourceOf("");
+    FilePacketPairSourceAdapter source = sourceOf("");
 
     List<PacketPair> pairs = source.loadPairs();
 
@@ -62,7 +62,8 @@ class FilePacketPairSourceTest {
   @Test
   void loadPairs_throws_whenFileDoesNotExist() {
     Path missing = tempDir.resolve("missing.txt");
-    FilePacketPairSource source = new FilePacketPairSource(missing, new PacketParser());
+    FilePacketPairSourceAdapter source =
+        new FilePacketPairSourceAdapter(missing, new PacketParser());
 
     PacketSourceException exception = assertThrows(PacketSourceException.class, source::loadPairs);
 
@@ -73,7 +74,7 @@ class FilePacketPairSourceTest {
 
   @Test
   void loadPairs_throws_whenBlockHasASingleLine() throws IOException {
-    FilePacketPairSource source = sourceOf("[1]\n[2]\n\n[3]\n");
+    FilePacketPairSourceAdapter source = sourceOf("[1]\n[2]\n\n[3]\n");
 
     PacketSourceException exception = assertThrows(PacketSourceException.class, source::loadPairs);
 
@@ -82,7 +83,7 @@ class FilePacketPairSourceTest {
 
   @Test
   void loadPairs_throws_whenBlockHasMoreThanTwoLines() throws IOException {
-    FilePacketPairSource source = sourceOf("[1]\n[2]\n[3]\n");
+    FilePacketPairSourceAdapter source = sourceOf("[1]\n[2]\n[3]\n");
 
     PacketSourceException exception = assertThrows(PacketSourceException.class, source::loadPairs);
 
@@ -91,7 +92,7 @@ class FilePacketPairSourceTest {
 
   @Test
   void loadPairs_throwsWithPairNumberAndCause_whenPacketIsInvalid() throws IOException {
-    FilePacketPairSource source = sourceOf("[1]\n[2]\n\n[3\n[4]\n");
+    FilePacketPairSourceAdapter source = sourceOf("[1]\n[2]\n\n[3\n[4]\n");
 
     PacketSourceException exception = assertThrows(PacketSourceException.class, source::loadPairs);
 

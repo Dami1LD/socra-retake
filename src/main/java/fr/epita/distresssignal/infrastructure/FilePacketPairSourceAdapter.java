@@ -1,6 +1,6 @@
 package fr.epita.distresssignal.infrastructure;
 
-import fr.epita.distresssignal.application.PacketPairSource;
+import fr.epita.distresssignal.application.PacketPairSourcePort;
 import fr.epita.distresssignal.domain.PacketPair;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -8,13 +8,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class FilePacketPairSource implements PacketPairSource {
+public final class FilePacketPairSourceAdapter implements PacketPairSourcePort {
   private static final int LINES_PER_PAIR = 2;
 
   private final Path file;
   private final PacketParser parser;
 
-  public FilePacketPairSource(Path file, PacketParser parser) {
+  public FilePacketPairSourceAdapter(Path file, PacketParser parser) {
     this.file = file;
     this.parser = parser;
   }
