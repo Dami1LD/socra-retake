@@ -25,7 +25,7 @@ Java 21 uniquement. Le Maven Wrapper (`mvnw` / `mvnw.cmd`) télécharge et utili
 java -jar target/distress-signal-1.0.0.jar chemin/vers/input.txt
 ```
 
-Le jar est produit par `./mvnw package` (ou `verify`). Le programme affiche deux lignes : le résultat de la partie 1, puis celui de la partie 2. Code de sortie `0` en cas de succès, `1` en cas d'erreur (argument manquant, fichier illisible, paquet invalide).
+Le jar est produit par `./mvnw package` (ou `verify`). Le programme affiche deux lignes : le résultat de la partie 1, puis celui de la partie 2. Code de sortie `0` en cas de succès, `1` en cas d'erreur (argument manquant, fichier illisible ou vide, paquet invalide, imbrication de plus de 500 niveaux).
 
 ## Architecture
 
@@ -70,14 +70,14 @@ Règle de dépendance : les flèches pointent toujours vers le centre (`domain`)
 - **Paquets identiques** : deux paquets strictement identiques sont considérés comme étant dans le bon ordre (comparaison `<= 0`), hypothèse assumée en l'absence de cas de ce type dans l'énoncé original.
 - **Partie 2 : un seul port, deux use cases** : `DecoderKeyUseCase` réutilise `PacketPairSourcePort` et aplatit les paires, sans changer le domaine ni l'infrastructure ; le format d'entrée reste le même qu'en partie 1.
 - **Diviseurs repérés par identité** (`==`) et non par égalité : si l'entrée contient déjà `[[2]]` ou `[[6]]`, la position du diviseur ajouté reste correcte. `List.sort` étant stable, un diviseur se place après les paquets égaux de l'entrée.
-- **Gestion des erreurs** : les erreurs de parsing lèvent une exception métier dédiée (`InvalidPacketException`) avec un message qui localise le problème (position dans la chaîne, caractère attendu vs. trouvé) plutôt qu'une exception générique du JDK.
+- **Gestion des erreurs** : les erreurs de parsing lèvent une exception métier dédiée (`InvalidPacketException`) avec un message qui localise le problème (position dans la chaîne, caractère attendu vs. trouvé) plutôt qu'une exception générique du JDK. Le parseur limite l'imbrication à 500 niveaux (erreur claire au lieu d'un `StackOverflowError`), et un fichier sans aucune paire est rejeté (`PacketSourceException`) plutôt que d'afficher un résultat trompeur.
 
 ## Stratégie de tests
 
 - **`domain`** : tests unitaires de la relation d'ordre (`compareTo`) pour `IntegerPacket`, `ListPacket` et `PacketPair`, avec des fixtures partagées (`PacketFixtures`) pour construire des paquets sans répéter la verbosité des constructeurs.
 - **`infrastructure`** : tests du parseur couvrant les paquets valides (listes vides, imbrication, entiers multi-chiffres) et les paquets invalides (position de l'erreur, cause conservée pour les dépassements d'entier), avec des tests paramétrés (`@ParameterizedTest`, `@CsvSource`, `@ValueSource`) pour couvrir plusieurs entrées sans dupliquer le test.
 - **`application`** : tests des deux use cases avec un port stub (lambda) — indices à partir de 1 pour la partie 1 ; positions des diviseurs, liste vide et paquets égaux aux diviseurs pour la partie 2.
-- **`cli`** : `MainTest` vérifie la sortie (deux lignes), les codes de sortie et les messages d'erreur (argument manquant, fichier absent, paquet invalide).
+- **`cli`** : `MainTest` vérifie la sortie (deux lignes), les codes de sortie et les messages d'erreur (argument manquant, fichier absent ou vide, paquet invalide, imbrication trop profonde). Il vérifie aussi l'exemple officiel de l'énoncé (`src/test/resources/example.txt`) : `13` puis `140`.
 - Chaque test suit le pattern **AAA** (Arrange, Act, Assert), explicité par des commentaires dans les cas les plus longs.
 
 ## Outils qualité
