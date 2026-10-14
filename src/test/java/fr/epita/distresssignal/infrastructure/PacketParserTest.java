@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.EmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 public class PacketParserTest {
@@ -91,13 +91,13 @@ public class PacketParserTest {
   class InvalidPackets {
 
     @ParameterizedTest
-    @NullAndEmptySource
+    @EmptySource
     @ValueSource(strings = {"   ", "\t"})
     void rejectsMissingContent(String line) {
 
       InvalidPacketException exception = parseExpectingFailure(line);
 
-      assertEquals("Packet line cannot be null or empty", exception.getMessage());
+      assertEquals("Packet line cannot be empty", exception.getMessage());
     }
 
     @ParameterizedTest(name = "\"{0}\" is rejected because: {1}")

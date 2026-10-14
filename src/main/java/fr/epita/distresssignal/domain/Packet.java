@@ -1,5 +1,3 @@
 package fr.epita.distresssignal.domain;
 
-public interface Packet {
-  int compareTo(Packet packet);
-}
+public sealed interface Packet extends Comparable<Packet> permits IntegerPacket, ListPacket {}

@@ -3,17 +3,16 @@ package fr.epita.distresssignal.domain;
 import java.util.List;
 
 public record IntegerPacket(int value) implements Packet {
+  /** Puzzle rule: an integer compared with a list is first wrapped into a one-element list. */
   public ListPacket toListPacket() {
     return new ListPacket(List.of(this));
   }
 
+  @Override
   public int compareTo(Packet other) {
-    if (other instanceof IntegerPacket otherInteger) {
-      return Integer.compare(this.value, otherInteger.value);
-    } else if (other instanceof ListPacket otherList) {
-      return this.toListPacket().compareTo(otherList);
-    } else {
-      throw new IllegalArgumentException("Unknown packet type: " + other.getClass());
-    }
+    return switch (other) {
+      case IntegerPacket otherInteger -> Integer.compare(value, otherInteger.value);
+      case ListPacket otherList -> toListPacket().compareTo(otherList);
+    };
   }
 }

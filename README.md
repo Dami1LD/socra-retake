@@ -57,14 +57,14 @@ Architecture hexagonale légère : le domaine ne dépend de rien, les adaptateur
 
 - `domain` : les types métier (interface `Packet`, `IntegerPacket`, `ListPacket`, `PacketPair`) et leur logique de comparaison. Aucune dépendance vers les autres packages.
 - `application` : le port `PacketPairSourcePort` (source des paires de paquets) et les deux use cases : `SumOfOrderedIndicesUseCase` (partie 1) et `DecoderKeyUseCase` (partie 2), qui partagent le même port. Dépend uniquement du domaine.
-- `infrastructure` : les adaptateurs pilotés (driven adapters) — `PacketParser` (parseur à descente récursive) et `FilePacketPairSourceAdapter` (lecture du fichier, découpage en paires séparées par une ligne vide, deux lignes par paire). Implémente le port défini par `application`.
+- `infrastructure` : les adaptateurs pilotés (driven adapters) — `PacketParser` (parseur à descente récursive, profondeur limitée) et `FilePacketPairSourceAdapter` (lecture du fichier, découpage en paires séparées par une ligne vide, deux lignes par paire). Implémente le port défini par `application`.
 - `cli` : l'adaptateur pilotant (driving adapter) et la racine de composition (`Main`), qui assemble l'adaptateur et les deux use cases.
 
 Règle de dépendance : les flèches pointent toujours vers le centre (`domain`). `domain` ne connaît ni `application`, ni `infrastructure`, ni `cli`. `infrastructure` ne connaît que les ports exposés par `application`, jamais l'inverse.
 
 ## Décisions de conception
 
-- **Hiérarchie typée et `compareTo`** : `Packet` modélise la variance entier/liste via deux records (`IntegerPacket`, `ListPacket`) qui implémentent la règle de comparaison de l'énoncé (un entier comparé à une liste est d'abord converti en liste d'un élément), plutôt qu'une structure générique (`Object`, `Map`) typée dynamiquement. `Packet` n'est ni scellé ni `Comparable` : la partie 2 trie avec `Packet::compareTo`.
+- **Hiérarchie typée et `compareTo`** : `Packet` modélise la variance entier/liste via deux records (`IntegerPacket`, `ListPacket`) qui implémentent la règle de comparaison de l'énoncé (un entier comparé à une liste est d'abord converti en liste d'un élément), plutôt qu'une structure générique (`Object`, `Map`) typée dynamiquement. `Packet` est une interface scellée et `Comparable<Packet>` : le `switch` par pattern est vérifié exhaustif par le compilateur, et la partie 2 trie avec l'ordre naturel.
 - **Parseur maison à descente récursive** : plutôt qu'un `eval` (risque d'exécution de code arbitraire) ou une librairie JSON (dépendance externe pour un format trivial et pour garder le contrôle fin sur les messages d'erreur et les positions), le parseur est écrit à la main.
 - **Emplacement du parseur dans `infrastructure`** : le parseur transforme une représentation texte externe (le fichier d'entrée) en objets du domaine ; c'est la responsabilité d'un adaptateur piloté, pas du domaine.
 - **Paquets identiques** : deux paquets strictement identiques sont considérés comme étant dans le bon ordre (comparaison `<= 0`), hypothèse assumée en l'absence de cas de ce type dans l'énoncé original.

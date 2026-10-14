@@ -5,6 +5,7 @@ import fr.epita.distresssignal.domain.ListPacket;
 import fr.epita.distresssignal.domain.Packet;
 import fr.epita.distresssignal.domain.PacketPair;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public final class DecoderKeyUseCase {
@@ -25,7 +26,7 @@ public final class DecoderKeyUseCase {
     }
     packets.add(FIRST_DIVIDER);
     packets.add(SECOND_DIVIDER);
-    packets.sort(Packet::compareTo);
+    packets.sort(Comparator.naturalOrder());
     return positionOf(packets, FIRST_DIVIDER) * positionOf(packets, SECOND_DIVIDER);
   }
 
