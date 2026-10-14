@@ -166,3 +166,4 @@ replay_pid*
 
 ### Maven Wrapper ###
 !.mvn/wrapper/maven-wrapper.jar
+src/test/resources/input.txt
