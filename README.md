@@ -1,8 +1,9 @@
-![CI](https://github.com/<OWNER>/<REPO>/actions/workflows/ci.yml/badge.svg)
-
 # Distress Signal
 
-Résolution d'[Advent of Code 2022, jour 13](https://adventofcode.com/2022/day/13) : comparaison de paquets imbriqués (entiers et listes) pour déterminer leur ordre. Partie 1 : somme des indices des paires déjà dans le bon ordre. Partie 2 : tri de tous les paquets avec deux diviseurs ajoutés (`[[2]]` et `[[6]]`), puis produit de leurs positions finales.
+Résolution d'[Advent of Code 2022, jour 13](https://adventofcode.com/2022/day/13) : comparaison de paquets imbriqués (entiers et listes) pour déterminer leur ordre.
+
+- **Partie 1** : somme des indices (à partir de 1) des paires déjà dans le bon ordre — `SumOfOrderedIndicesUseCase`.
+- **Partie 2** : tous les paquets de l'entrée (les deux de chaque paire) sont mis dans une seule liste avec deux paquets diviseurs, `[[2]]` et `[[6]]`. La liste est triée, puis on multiplie les positions (à partir de 1) des deux diviseurs — `DecoderKeyUseCase`.
 
 ## Prérequis
 
@@ -24,53 +25,59 @@ Java 21 uniquement. Le Maven Wrapper (`mvnw` / `mvnw.cmd`) télécharge et utili
 java -jar target/distress-signal-1.0.0.jar chemin/vers/input.txt
 ```
 
+Le jar est produit par `./mvnw package` (ou `verify`). Le programme affiche deux lignes : le résultat de la partie 1, puis celui de la partie 2. Code de sortie `0` en cas de succès, `1` en cas d'erreur (argument manquant, fichier illisible, paquet invalide).
+
 ## Architecture
 
 Architecture hexagonale légère : le domaine ne dépend de rien, les adaptateurs dépendent du domaine via les ports.
 
 ```
                         ┌─────────────────────┐
-  (driving adapter)     │         cli          │
-                        │  Main (entry point)  │
-                        └──────────┬───────────┘
+  (driving adapter)     │         cli         │
+                        │  Main (entry point) │
+                        └──────────┬──────────┘
                                    │ appelle
                         ┌──────────▼───────────┐
-                        │     application       │
-                        │  use cases + ports     │
+                        │     application      │
+                        │  use cases + ports   │
                         └──────────┬───────────┘
                                    │ dépend de
                         ┌──────────▼───────────┐
-                        │        domain         │
-                        │ Packet, PacketPair     │
-                        │  (aucune dépendance)   │
+                        │        domain        │
+                        │ Packet, PacketPair   │
+                        │  (aucune dépendance) │
                         └──────────▲───────────┘
                                    │ implémente le port
-                        ┌──────────┴───────────┐
+                        ┌──────────┴────────────┐
   (driven adapter)      │    infrastructure     │
-                        │ PacketParser, lecture  │
-                        │      de fichier        │
+                        │ PacketParser, lecture │
+                        │      de fichier       │
                         └───────────────────────┘
 ```
 
-- `domain` : les types métier (`Packet` scellé, `IntegerPacket`, `ListPacket`, `PacketPair`) et leur logique de comparaison. Aucune dépendance vers les autres packages.
-- `application` : les ports (interfaces) dont le domaine ou les use cases ont besoin, et les use cases eux-mêmes (partie 1 : somme des indices des paires ordonnées ; partie 2 : clé de décodage). Dépend uniquement du domaine.
-- `infrastructure` : les adaptateurs pilotés (driven adapters) — `PacketParser` (parseur descente récursive) et la lecture du fichier d'entrée. Implémente les ports définis par `application`.
-- `cli` : l'adaptateur pilotant (driving adapter) et la racine de composition (`Main`), qui assemble les adaptateurs et les use cases.
+- `domain` : les types métier (interface `Packet`, `IntegerPacket`, `ListPacket`, `PacketPair`) et leur logique de comparaison. Aucune dépendance vers les autres packages.
+- `application` : le port `PacketPairSourcePort` (source des paires de paquets) et les deux use cases : `SumOfOrderedIndicesUseCase` (partie 1) et `DecoderKeyUseCase` (partie 2), qui partagent le même port. Dépend uniquement du domaine.
+- `infrastructure` : les adaptateurs pilotés (driven adapters) — `PacketParser` (parseur à descente récursive) et `FilePacketPairSourceAdapter` (lecture du fichier, découpage en paires séparées par une ligne vide, deux lignes par paire). Implémente le port défini par `application`.
+- `cli` : l'adaptateur pilotant (driving adapter) et la racine de composition (`Main`), qui assemble l'adaptateur et les deux use cases.
 
 Règle de dépendance : les flèches pointent toujours vers le centre (`domain`). `domain` ne connaît ni `application`, ni `infrastructure`, ni `cli`. `infrastructure` ne connaît que les ports exposés par `application`, jamais l'inverse.
 
 ## Décisions de conception
 
-- **Types scellés et `Comparable`** : `Packet` modélise la variance entier/liste via une hiérarchie scellée (`IntegerPacket`, `ListPacket`), ce qui force à traiter tous les cas à la compilation plutôt que de retomber sur une structure générique (`Object`, `Map`) typée dynamiquement.
+- **Hiérarchie typée et `compareTo`** : `Packet` modélise la variance entier/liste via deux records (`IntegerPacket`, `ListPacket`) qui implémentent la règle de comparaison de l'énoncé (un entier comparé à une liste est d'abord converti en liste d'un élément), plutôt qu'une structure générique (`Object`, `Map`) typée dynamiquement. `Packet` n'est ni scellé ni `Comparable` : la partie 2 trie avec `Packet::compareTo`.
 - **Parseur maison à descente récursive** : plutôt qu'un `eval` (risque d'exécution de code arbitraire) ou une librairie JSON (dépendance externe pour un format trivial et pour garder le contrôle fin sur les messages d'erreur et les positions), le parseur est écrit à la main.
 - **Emplacement du parseur dans `infrastructure`** : le parseur transforme une représentation texte externe (le fichier d'entrée) en objets du domaine ; c'est la responsabilité d'un adaptateur piloté, pas du domaine.
 - **Paquets identiques** : deux paquets strictement identiques sont considérés comme étant dans le bon ordre (comparaison `<= 0`), hypothèse assumée en l'absence de cas de ce type dans l'énoncé original.
+- **Partie 2 : un seul port, deux use cases** : `DecoderKeyUseCase` réutilise `PacketPairSourcePort` et aplatit les paires, sans changer le domaine ni l'infrastructure ; le format d'entrée reste le même qu'en partie 1.
+- **Diviseurs repérés par identité** (`==`) et non par égalité : si l'entrée contient déjà `[[2]]` ou `[[6]]`, la position du diviseur ajouté reste correcte. `List.sort` étant stable, un diviseur se place après les paquets égaux de l'entrée.
 - **Gestion des erreurs** : les erreurs de parsing lèvent une exception métier dédiée (`InvalidPacketException`) avec un message qui localise le problème (position dans la chaîne, caractère attendu vs. trouvé) plutôt qu'une exception générique du JDK.
 
 ## Stratégie de tests
 
 - **`domain`** : tests unitaires de la relation d'ordre (`compareTo`) pour `IntegerPacket`, `ListPacket` et `PacketPair`, avec des fixtures partagées (`PacketFixtures`) pour construire des paquets sans répéter la verbosité des constructeurs.
 - **`infrastructure`** : tests du parseur couvrant les paquets valides (listes vides, imbrication, entiers multi-chiffres) et les paquets invalides (position de l'erreur, cause conservée pour les dépassements d'entier), avec des tests paramétrés (`@ParameterizedTest`, `@CsvSource`, `@ValueSource`) pour couvrir plusieurs entrées sans dupliquer le test.
+- **`application`** : tests des deux use cases avec un port stub (lambda) — indices à partir de 1 pour la partie 1 ; positions des diviseurs, liste vide et paquets égaux aux diviseurs pour la partie 2.
+- **`cli`** : `MainTest` vérifie la sortie (deux lignes), les codes de sortie et les messages d'erreur (argument manquant, fichier absent, paquet invalide).
 - Chaque test suit le pattern **AAA** (Arrange, Act, Assert), explicité par des commentaires dans les cas les plus longs.
 
 ## Outils qualité

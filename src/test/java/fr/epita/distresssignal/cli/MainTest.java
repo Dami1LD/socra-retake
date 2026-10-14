@@ -33,13 +33,15 @@ class MainTest {
   }
 
   @Test
-  void run_printsSumAndReturnsZero_whenFileIsValid() throws IOException {
+  void run_printsBothPartsAndReturnsZero_whenFileIsValid() throws IOException {
     Path file = inputFile("[1]\n[2]\n\n[3]\n[2]\n\n[1]\n[1]\n");
 
     int exitCode = Main.run(new String[] {file.toString()}, out, err);
 
     assertEquals(Main.EXIT_OK, exitCode);
-    assertEquals("4" + System.lineSeparator(), outBuffer.toString());
+    // part 1: pairs 1 and 3 in order; part 2: [[2]] at 6, [[6]] at 8 after sorting
+    assertEquals(
+        "4" + System.lineSeparator() + "48" + System.lineSeparator(), outBuffer.toString());
     assertEquals("", errBuffer.toString());
   }
 

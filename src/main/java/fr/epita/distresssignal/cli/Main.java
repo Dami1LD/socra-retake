@@ -1,5 +1,6 @@
 package fr.epita.distresssignal.cli;
 
+import fr.epita.distresssignal.application.DecoderKeyUseCase;
 import fr.epita.distresssignal.application.SumOfOrderedIndicesUseCase;
 import fr.epita.distresssignal.infrastructure.FilePacketPairSourceAdapter;
 import fr.epita.distresssignal.infrastructure.PacketParser;
@@ -26,6 +27,7 @@ public final class Main {
       FilePacketPairSourceAdapter source =
           new FilePacketPairSourceAdapter(Path.of(args[0]), new PacketParser());
       out.println(new SumOfOrderedIndicesUseCase(source).execute());
+      out.println(new DecoderKeyUseCase(source).execute());
       return EXIT_OK;
     } catch (PacketSourceException e) {
       err.println("Error: " + e.getMessage());
