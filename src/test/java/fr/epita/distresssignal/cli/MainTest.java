@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,10 +40,40 @@ class MainTest {
     int exitCode = Main.run(new String[] {file.toString()}, out, err);
 
     assertEquals(Main.EXIT_OK, exitCode);
-    // part 1: pairs 1 and 3 in order; part 2: [[2]] at 6, [[6]] at 8 after sorting
     assertEquals(
         "4" + System.lineSeparator() + "48" + System.lineSeparator(), outBuffer.toString());
     assertEquals("", errBuffer.toString());
+  }
+
+  @Test
+  void run_printsOfficialExampleAnswers() throws URISyntaxException {
+    Path example = Path.of(getClass().getResource("/example.txt").toURI());
+
+    int exitCode = Main.run(new String[] {example.toString()}, out, err);
+
+    assertEquals(Main.EXIT_OK, exitCode);
+    assertEquals(
+        "13" + System.lineSeparator() + "140" + System.lineSeparator(), outBuffer.toString());
+  }
+
+  @Test
+  void run_printsErrorAndReturnsNonZero_whenFileIsEmpty() throws IOException {
+    Path file = inputFile("");
+
+    int exitCode = Main.run(new String[] {file.toString()}, out, err);
+
+    assertEquals(Main.EXIT_ERROR, exitCode);
+    assertTrue(errBuffer.toString().contains("No packet pairs found"));
+  }
+
+  @Test
+  void run_printsErrorAndReturnsNonZero_whenNestingIsTooDeep() throws IOException {
+    Path file = inputFile("[".repeat(5000) + "]".repeat(5000) + "\n[1]\n");
+
+    int exitCode = Main.run(new String[] {file.toString()}, out, err);
+
+    assertEquals(Main.EXIT_ERROR, exitCode);
+    assertTrue(errBuffer.toString().contains("nesting deeper than"));
   }
 
   @Test

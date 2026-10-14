@@ -10,28 +10,39 @@ public final class PacketCursor {
   private static final char LIST_START = '[';
   private static final char LIST_END = ']';
   private static final char SEPARATOR = ',';
+  private static final int MAX_NESTING_DEPTH = 500;
 
   private final String text;
   private int position = 0;
+  private int depth = 0;
 
   PacketCursor(String text) {
     this.text = text;
   }
 
   ListPacket readList() {
-    expect(LIST_START);
+    enterList();
     List<Packet> elements = new ArrayList<>();
     if (peek() == LIST_END) {
       position++;
-      return new ListPacket(elements);
-    }
-    elements.add(readValue());
-    while (peek() == SEPARATOR) {
-      position++;
+    } else {
       elements.add(readValue());
+      while (peek() == SEPARATOR) {
+        position++;
+        elements.add(readValue());
+      }
+      expect(LIST_END);
     }
-    expect(LIST_END);
+    depth--;
     return new ListPacket(elements);
+  }
+
+  private void enterList() {
+    expect(LIST_START);
+    depth++;
+    if (depth > MAX_NESTING_DEPTH) {
+      throw error("nesting deeper than " + MAX_NESTING_DEPTH + " levels");
+    }
   }
 
   void expectEnd() {

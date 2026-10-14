@@ -25,6 +25,9 @@ public final class FilePacketPairSourceAdapter implements PacketPairSourcePort {
     for (List<String> block : readBlocks()) {
       pairs.add(toPair(block, pairs.size() + 1));
     }
+    if (pairs.isEmpty()) {
+      throw new PacketSourceException("No packet pairs found in " + file);
+    }
     return pairs;
   }
 

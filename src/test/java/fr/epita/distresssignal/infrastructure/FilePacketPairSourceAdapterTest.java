@@ -51,12 +51,12 @@ class FilePacketPairSourceAdapterTest {
   }
 
   @Test
-  void loadPairs_returnsEmptyList_whenFileIsEmpty() throws IOException {
+  void loadPairs_throws_whenFileIsEmpty() throws IOException {
     FilePacketPairSourceAdapter source = sourceOf("");
 
-    List<PacketPair> pairs = source.loadPairs();
+    PacketSourceException exception = assertThrows(PacketSourceException.class, source::loadPairs);
 
-    assertTrue(pairs.isEmpty());
+    assertTrue(exception.getMessage().startsWith("No packet pairs found"));
   }
 
   @Test

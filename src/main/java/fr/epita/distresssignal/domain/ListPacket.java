@@ -7,11 +7,9 @@ public record ListPacket(List<Packet> elements) implements Packet {
     if (other instanceof ListPacket otherList) {
       int minSize = Math.min(this.elements.size(), otherList.elements.size());
       for (int i = 0; i < minSize; i++) {
-        boolean result = this.elements.get(i).compareTo(otherList.elements.get(i)) < 0;
-        if (result) {
-          return -1;
-        } else if (this.elements.get(i).compareTo(otherList.elements.get(i)) > 0) {
-          return 1;
+        int comparison = this.elements.get(i).compareTo(otherList.elements.get(i));
+        if (comparison != 0) {
+          return comparison;
         }
       }
       return Integer.compare(this.elements.size(), otherList.elements.size());
